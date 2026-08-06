@@ -13,13 +13,19 @@ const departments = [
   "Management"
 ];
 
-const salaryLevels = [
-  { label: "Low", value: 1 },
-  { label: "Medium", value: 2 },
-  { label: "High", value: 3 }
-];
+type FormState = {
+  Satisfaction: number | "";
+  Evaluation: number | "";
+  number_of_projects: number | "";
+  average_montly_hours: number | "";
+  time_spent_company: number | "";
+  work_accident: number | "";
+  Promotion: number | "";
+  Department: string;
+  Salary_INR: number | "";
+};
 
-const initialState = {
+const initialState: FormState = {
   Satisfaction: 0.72,
   Evaluation: 0.55,
   number_of_projects: 3,
@@ -31,7 +37,18 @@ const initialState = {
   Salary_INR: 2
 };
 
-type FormState = typeof initialState;
+function parseNumericValue(value: string, asInteger = false): number | "" {
+  if (value === "") {
+    return "";
+  }
+
+  const parsed = asInteger ? Number.parseInt(value, 10) : Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : "";
+}
+
+function toNumber(value: number | ""): number {
+  return typeof value === "number" ? value : 0;
+}
 
 interface PredictionResult {
   prediction: number;
@@ -53,14 +70,27 @@ export default function PredictionForm() {
     event.preventDefault();
     setError(null);
     setLoading(true);
+    setResult(null);
 
     try {
+      const payload = {
+        Satisfaction: toNumber(formState.Satisfaction),
+        Evaluation: toNumber(formState.Evaluation),
+        number_of_projects: toNumber(formState.number_of_projects),
+        average_montly_hours: toNumber(formState.average_montly_hours),
+        time_spent_company: toNumber(formState.time_spent_company),
+        work_accident: toNumber(formState.work_accident),
+        Promotion: toNumber(formState.Promotion),
+        Department: formState.Department,
+        Salary_INR: toNumber(formState.Salary_INR)
+      };
+
       const response = await fetch("/api/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formState)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -102,8 +132,9 @@ export default function PredictionForm() {
               step="0.01"
               min="0"
               max="1"
+              name="Satisfaction"
               value={formState.Satisfaction}
-              onChange={(event) => updateField("Satisfaction", parseFloat(event.target.value))}
+              onChange={(event) => updateField("Satisfaction", parseNumericValue(event.target.value))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -115,8 +146,9 @@ export default function PredictionForm() {
               step="0.01"
               min="0"
               max="1"
+              name="Evaluation"
               value={formState.Evaluation}
-              onChange={(event) => updateField("Evaluation", parseFloat(event.target.value))}
+              onChange={(event) => updateField("Evaluation", parseNumericValue(event.target.value))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -127,8 +159,9 @@ export default function PredictionForm() {
               type="number"
               min="1"
               max="10"
+              name="number_of_projects"
               value={formState.number_of_projects}
-              onChange={(event) => updateField("number_of_projects", parseInt(event.target.value, 10))}
+              onChange={(event) => updateField("number_of_projects", parseNumericValue(event.target.value, true))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -139,8 +172,9 @@ export default function PredictionForm() {
               type="number"
               min="80"
               max="320"
+              name="average_montly_hours"
               value={formState.average_montly_hours}
-              onChange={(event) => updateField("average_montly_hours", parseInt(event.target.value, 10))}
+              onChange={(event) => updateField("average_montly_hours", parseNumericValue(event.target.value, true))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -151,8 +185,9 @@ export default function PredictionForm() {
               type="number"
               min="0"
               max="20"
+              name="time_spent_company"
               value={formState.time_spent_company}
-              onChange={(event) => updateField("time_spent_company", parseInt(event.target.value, 10))}
+              onChange={(event) => updateField("time_spent_company", parseNumericValue(event.target.value, true))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </label>
@@ -160,6 +195,7 @@ export default function PredictionForm() {
           <label className="block text-sm font-medium text-slate-700">
             Department
             <select
+              name="Department"
               value={formState.Department}
               onChange={(event) => updateField("Department", event.target.value)}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
@@ -174,24 +210,23 @@ export default function PredictionForm() {
 
           <label className="block text-sm font-medium text-slate-700">
             Salary Level
-            <select
+            <input
+              type="number"
+              name="Salary_INR"
+              min="1"
+              step="1"
               value={formState.Salary_INR}
-              onChange={(event) => updateField("Salary_INR", parseInt(event.target.value, 10))}
+              onChange={(event) => updateField("Salary_INR", parseNumericValue(event.target.value, true))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
-            >
-              {salaryLevels.map((salary) => (
-                <option key={salary.value} value={salary.value}>
-                  {salary.label}
-                </option>
-              ))}
-            </select>
+            />
           </label>
 
           <label className="block text-sm font-medium text-slate-700">
             Work Accident
             <select
+              name="work_accident"
               value={formState.work_accident}
-              onChange={(event) => updateField("work_accident", parseInt(event.target.value, 10))}
+              onChange={(event) => updateField("work_accident", parseNumericValue(event.target.value, true))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
               <option value={0}>No</option>
@@ -202,8 +237,9 @@ export default function PredictionForm() {
           <label className="block text-sm font-medium text-slate-700">
             Promotion in Last 5 Years
             <select
+              name="Promotion"
               value={formState.Promotion}
-              onChange={(event) => updateField("Promotion", parseInt(event.target.value, 10))}
+              onChange={(event) => updateField("Promotion", parseNumericValue(event.target.value, true))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
               <option value={0}>No</option>
